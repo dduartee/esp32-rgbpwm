@@ -3,58 +3,38 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 
-const char *ssid = "..";
-const char *password = "..";
+const char *ssid = "...";
+const char *password = "...";
 
 WebServer server(80);
 
-const int led = 13;
-
-void handleRoot()
-{
-  digitalWrite(led, 1);
-  server.send(200, "text/plain", "hello from esp32!");
-  digitalWrite(led, 0);
-}
-
-void handleNotFound()
-{
-  digitalWrite(led, 1);
-  String message = "File Not Found\n\n";
-  message += "URI: ";
-  message += server.uri();
-  message += "\nMethod: ";
-  message += (server.method() == HTTP_GET) ? "GET" : "POST";
-  message += "\nArguments: ";
-  message += server.args();
-  message += "\n";
-  for (uint8_t i = 0; i < server.args(); i++)
-  {
-    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
-  }
-  server.send(404, "text/plain", message);
-  digitalWrite(led, 0);
-}
-void handleLEDState()
+const int ledR = 16;
+const int ledG = 17;
+const int ledB = 4;
+const int channelR = 0;
+const int channelG = 1;
+const int channelB = 2;
+void handleLEDColor()
 {
   if (server.method() == HTTP_POST)
   {
-    String state = server.arg("state"); // query param "state" ?state=1
-    if (state == "1")
-    {
-      digitalWrite(led, 1);
-    }
-    else
-    {
-      digitalWrite(led, 0);
-    }
+    int brightnessR = server.arg("brightnessR").toInt(); // 0 - 255
+    int brightnessG = server.arg("brightnessG").toInt(); // 0 - 255
+    int brightnessB = server.arg("brightnessB").toInt(); // 0 - 255
+    ledcWrite(channelR, brightnessR);
+    ledcWrite(channelG, brightnessG);
+    ledcWrite(channelB, brightnessB);
   }
-  server.send(200, "application/json", "{\"state\":\"" + String(digitalRead(led)) + "\"}");
+  server.send(200, "application/json", "{\"channelR\":\"" + String(ledcRead(channelR)) + "\",\"channelG\":\"" + String(ledcRead(channelG)) + "\",\"channelB\":\"" + String(ledcRead(channelB)) + "\"}");
 }
 void setup(void)
 {
-  pinMode(led, OUTPUT);
-  digitalWrite(led, 0);
+  ledcSetup(channelR, 5000, 8);
+  ledcSetup(channelG, 5000, 8);
+  ledcSetup(channelB, 5000, 8);
+  ledcAttachPin(ledR, 0);
+  ledcAttachPin(ledG, 1);
+  ledcAttachPin(ledB, 2);
   Serial.begin(115200);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
@@ -76,12 +56,11 @@ void setup(void)
   {
     Serial.println("MDNS responder started");
   }
-
-  server.on("/", handleRoot);
-
-  server.on("/led", handleLEDState);
-
-  server.onNotFound(handleNotFound);
+  server.enableCORS();
+  server.on("/", []() {
+    server.send(200, "text/html", "<h1>Hello ESP32!</h1>");
+  });
+  server.on("/led", handleLEDColor);
 
   server.begin();
   Serial.println("HTTP server started");

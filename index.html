@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP-32</title>
+</head>
+
+<body>
+    <h1>ESP-32</h1>
+    <h3>brightness</h3>
+    <span>vermelho</span><input type="range" min="0" max="255" step="16" value="0" id="sliderR" name="brightnessR" oninput="changeBrightness()">
+    <span>verde</span><input type="range" min="0" max="255" step="16" value="0" id="sliderG" name="brightnessG" oninput="changeBrightness()">
+    <span>azul</span><input type="range" min="0" max="255" step="16" value="0" id="sliderB" name="brightnessB" oninput="changeBrightness()">
+    <script>
+        function changeBrightness() {
+            const r = document.getElementById("sliderR").value;
+            const g = document.getElementById("sliderG").value;
+            const b = document.getElementById("sliderB").value;
+            const formData = new FormData()
+            formData.append("brightnessR", r);
+            formData.append("brightnessG", g);
+            formData.append("brightnessB", b);
+            fetch('http://10.0.0.31/led', {
+                method: 'POST',
+                body: formData
+            });
+
+        }
+
+    </script>
+</body>
+
+</html>
